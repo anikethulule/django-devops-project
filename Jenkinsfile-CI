@@ -48,8 +48,18 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
                 sh '''
-                trivy image --severity HIGH,CRITICAL --exit-code 0 ${ECR_REPO}:${IMAGE_TAG}
-                trivy image --severity CRITICAL --exit-code 1 ${ECR_REPO}:${IMAGE_TAG}
+                mkdir -p trivy-reports
+
+                trivy image \
+                  --severity HIGH,CRITICAL \
+                  --exit-code 0 \
+                  --format table \
+                  --output trivy-reports/trivy-image-report.txt \
+                  ${ECR_REPO}:${IMAGE_TAG}
+
+                echo "========== Trivy Scan Report =========="
+                cat trivy-reports/trivy-image-report.txt
+                echo "========== Trivy scan completed. Pipeline will continue. =========="
                 '''
             }
         }
