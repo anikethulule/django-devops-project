@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: django-app
-          image: 065209282584.dkr.ecr.us-east-1.amazonaws.com/django-devops-app:47
+          image: 065209282584.dkr.ecr.us-east-1.amazonaws.com/django-devops-app:48
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
