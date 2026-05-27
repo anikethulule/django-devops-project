@@ -23,7 +23,7 @@ pipeline {
                     script {
                         def scannerHome = tool 'SonarScanner'
                         sh """
-                        ${scannerHome}/bin/SonarScanner \
+                        ${scannerHome}/bin/sonar-scanner \
                           -Dsonar.projectKey=django-devops-app \
                           -Dsonar.projectName=django-devops-app \
                           -Dsonar.sources=app
