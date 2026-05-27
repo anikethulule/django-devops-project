@@ -8,6 +8,7 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
         IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
         LATEST_IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
+        SKIP_PIPELINE = "false"
     }
 
     stages {
@@ -17,7 +18,45 @@ pipeline {
             }
         }
 
+        stage('Check Skip CI') {
+            steps {
+                script {
+                    def commitMessage = sh(
+                        script: "git log -1 --pretty=%B",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Latest commit message: ${commitMessage}"
+
+                    if (commitMessage.contains("[skip ci]")) {
+                        env.SKIP_PIPELINE = "true"
+                        echo "Skipping pipeline because this commit was created by Jenkins."
+                    }
+                }
+            }
+        }
+
+        stage('Slack - Build Started') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                    sh '''
+                    curl -X POST -H 'Content-type: application/json' \
+                    --data "{
+                      \\"text\\": \\"🚀 Jenkins CI Pipeline Started\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage Tag: ${IMAGE_TAG}\\nStatus: Build started\\"
+                    }" \
+                    ${SLACK_WEBHOOK}
+                    '''
+                }
+            }
+        }
+
         stage('SonarQube Static Code Analysis') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 withSonarQubeEnv('SonarQube') {
                     script {
@@ -36,6 +75,9 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 sh '''
                 docker build -t ${ECR_REPO}:${IMAGE_TAG} ./app
@@ -46,6 +88,9 @@ pipeline {
         }
 
         stage('Trivy Security Scan Report') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 sh '''
                 mkdir -p trivy-reports
@@ -61,10 +106,25 @@ pipeline {
                 cat trivy-reports/trivy-image-report.txt
                 echo "========== Trivy scan completed. Pipeline will continue. =========="
                 '''
+                
+                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                    sh '''
+                    TRIVY_SUMMARY=$(grep -E "Total:|HIGH:|CRITICAL:" trivy-reports/trivy-image-report.txt | head -5 | sed 's/"/\\"/g' || true)
+
+                    curl -X POST -H 'Content-type: application/json' \
+                    --data "{
+                      \\"text\\": \\"🔐 Trivy Security Scan Completed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${ECR_REPO}:${IMAGE_TAG}\\nResult: Report generated. Pipeline continued.\\n${TRIVY_SUMMARY}\\"
+                    }" \
+                    ${SLACK_WEBHOOK}
+                    '''
+                }
             }
         }
 
         stage('Login to ECR') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
@@ -80,15 +140,31 @@ pipeline {
         }
 
         stage('Push Image to ECR') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 sh '''
                 docker push ${IMAGE_URI}
                 docker push ${LATEST_IMAGE_URI}
                 '''
+
+                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                    sh '''
+                    curl -X POST -H 'Content-type: application/json' \
+                    --data "{
+                      \\"text\\": \\"📦 Docker Image Pushed to ECR\\nImage URI: ${IMAGE_URI}\\nLatest URI: ${LATEST_IMAGE_URI}\\"
+                    }" \
+                    ${SLACK_WEBHOOK}
+                    '''
+                }
             }
         }
 
         stage('Update Kubernetes Manifest') {
+            when {
+                expression { env.SKIP_PIPELINE != "true" }
+            }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'github-token',
@@ -102,10 +178,25 @@ pipeline {
                     git config user.name "jenkins"
 
                     git add k8s/deployment.yaml
-                    git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
 
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/anikethulule/django-devops-project.git
-                    git push origin main
+                    if git diff --cached --quiet; then
+                        echo "No manifest changes to commit"
+                    else
+                        git commit -m "[skip ci] Update image to ${IMAGE_TAG}"
+
+                        git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/anikethulule/django-devops-project.git
+                        git push origin main
+                    fi
+                    '''
+                }
+
+                withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                    sh '''
+                    curl -X POST -H 'Content-type: application/json' \
+                    --data "{
+                      \\"text\\": \\"🚢 Deployment Manifest Updated\\nApplication: django-app\\nNew Image: ${IMAGE_URI}\\nStatus: Manifest pushed to GitHub. ArgoCD will sync and deploy to EKS.\\"
+                    }" \
+                    ${SLACK_WEBHOOK}
                     '''
                 }
             }
@@ -114,18 +205,39 @@ pipeline {
 
     post {
         success {
-            echo "CI pipeline completed successfully"
-             withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
-                sh '''
-                curl -X POST -H 'Content-type: application/json' \
-                --data '{"text":"Django app Integration testing and image deployment completed successfully on ECR"}' \
-                ${SLACK_WEBHOOK}
-                '''
+            script {
+                if (env.SKIP_PIPELINE != "true") {
+                    echo "CI pipeline completed successfully"
+                    withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                        sh '''
+                        curl -X POST -H 'Content-type: application/json' \
+                        --data "{
+                          \\"text\\": \\"✅ Jenkins CI Pipeline Successful\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${IMAGE_URI}\\nStatus: Build, SonarQube, Trivy report, ECR push and ArgoCD manifest update completed.\\"
+                        }" \
+                        ${SLACK_WEBHOOK}
+                        '''
+                    }
+                } else {
+                    echo "Skipped Jenkins auto commit build."
+                }
             }
         }
 
         failure {
-            echo "CI pipeline failed"
+            script {
+                if (env.SKIP_PIPELINE != "true") {
+                    echo "CI pipeline failed"
+                    withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                        sh '''
+                        curl -X POST -H 'Content-type: application/json' \
+                        --data "{
+                          \\"text\\": \\"❌ Jenkins CI Pipeline Failed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nPlease check Jenkins console logs.\\"
+                        }" \
+                        ${SLACK_WEBHOOK}
+                        '''
+                    }
+                }
+            }
         }
     }
 }
