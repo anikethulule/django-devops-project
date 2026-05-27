@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = "us-east-1"
+        EKS_CLUSTER = "django-devops-eks"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/anikethulule/django-devops-project.git'
+            }
+        }
+
+        stage('Configure EKS Access') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                    aws eks update-kubeconfig \
+                      --region ${AWS_REGION} \
+                      --name ${EKS_CLUSTER}
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f k8s/namespace.yaml
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl rollout status deployment/django-app -n django-app
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                kubectl get pods -n django-app
+                kubectl get svc -n django-app
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"Django app deployed successfully on EKS"}' \
+                ${SLACK_WEBHOOK}
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"Django app deployment failed"}' \
+                ${SLACK_WEBHOOK}
+                '''
+            }
+        }
+    }
+}

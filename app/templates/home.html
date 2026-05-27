@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Django DevOps Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #051e2f;
+      --bg-mid: #0a3d62;
+      --bg-soft: #f4f6f8;
+      --ink-main: #0c1f31;
+      --accent: #ff6b35;
+      --accent-2: #2ec4b6;
+      --card: rgba(255, 255, 255, 0.88);
+      --line: rgba(12, 31, 49, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--ink-main);
+      background:
+        radial-gradient(circle at 10% 10%, #2ec4b64d 0, transparent 32%),
+        radial-gradient(circle at 88% 22%, #ff6b3540 0, transparent 35%),
+        linear-gradient(135deg, var(--bg-deep), var(--bg-mid));
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: min(980px, 100%);
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(4px);
+      animation: rise 700ms ease-out;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #d2dae1;
+    }
+
+    .dot:nth-child(1) { background: #ff6b35; }
+    .dot:nth-child(2) { background: #ffbe0b; }
+    .dot:nth-child(3) { background: #2ec4b6; }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+      padding: 32px;
+      background: linear-gradient(180deg, #ffffffde, #f1f4f7f0);
+    }
+
+    .hero h1 {
+      margin: 0 0 14px;
+      font-family: "Syne", sans-serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.04;
+      letter-spacing: -0.02em;
+      color: #082034;
+      animation: fadeIn 850ms ease-out;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 52ch;
+      line-height: 1.6;
+      color: #284356;
+      animation: fadeIn 950ms ease-out;
+    }
+
+    .actions {
+      margin-top: 26px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      animation: fadeIn 1100ms ease-out;
+    }
+
+    .btn {
+      text-decoration: none;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 11px 16px;
+      border: 1px solid transparent;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 10px 18px rgba(255, 107, 53, 0.3);
+    }
+
+    .btn.secondary {
+      background: #ffffff;
+      color: var(--ink-main);
+      border-color: var(--line);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #ffffff;
+      align-self: start;
+      animation: slideLeft 900ms ease-out;
+    }
+
+    .status h2 {
+      margin: 0 0 12px;
+      font-family: "Syne", sans-serif;
+      font-size: 1.2rem;
+      color: #0f2d46;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--line);
+      color: #284356;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .badge {
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: #e8fff6;
+      color: #0b6a4e;
+      border: 1px solid #bae8d8;
+      white-space: nowrap;
+    }
+
+    @keyframes rise {
+      from { transform: translateY(18px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideLeft {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @media (max-width: 880px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+
+    <section class="content">
+      <div class="hero">
+        <h1>Django DevOps Portal</h1>
+        <p>
+          Your application is live with a fresh UI. Use this dashboard as the base
+          for your product pages, deployment status, and environment checks.
+        </p>
+
+        <div class="actions">
+          <a class="btn primary" href="/admin/">Open Admin</a>
+          <a class="btn secondary" href="#">View Docs</a>
+        </div>
+      </div>
+
+      <aside class="status">
+        <h2>Service Snapshot</h2>
+        <div class="row">
+          <span>Application</span>
+          <span class="badge">Running</span>
+        </div>
+        <div class="row">
+          <span>Build Pipeline</span>
+          <span class="badge">Healthy</span>
+        </div>
+        <div class="row">
+          <span>Kubernetes</span>
+          <span class="badge">Connected</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

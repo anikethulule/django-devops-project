@@ -1,0 +1,97 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = "us-east-1"
+        AWS_ACCOUNT_ID = "065209282584"
+        ECR_REPO = "django-devops-app"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+        LATEST_IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/anikethulule/django-devops-project.git'
+            }
+        }
+
+        stage('SonarQube Static Code Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=django-devops-app \
+                      -Dsonar.projectName=django-devops-app \
+                      -Dsonar.sources=app
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                docker build -t ${ECR_REPO}:${IMAGE_TAG} ./app
+                docker tag ${ECR_REPO}:${IMAGE_TAG} ${IMAGE_URI}
+                docker tag ${ECR_REPO}:${IMAGE_TAG} ${LATEST_IMAGE_URI}
+                '''
+            }
+        }
+
+        stage('Trivy Security Scan') {
+            steps {
+                sh '''
+                trivy image --severity HIGH,CRITICAL --exit-code 0 ${ECR_REPO}:${IMAGE_TAG}
+                trivy image --severity CRITICAL --exit-code 1 ${ECR_REPO}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Login to ECR') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                    aws ecr get-login-password --region ${AWS_REGION} | \
+                    docker login --username AWS --password-stdin \
+                    ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    '''
+                }
+            }
+        }
+
+        stage('Push Image to ECR') {
+            steps {
+                sh '''
+                docker push ${IMAGE_URI}
+                docker push ${LATEST_IMAGE_URI}
+                '''
+            }
+        }
+
+        stage('Update Kubernetes Manifest') {
+            steps {
+                sh '''
+                sed -i "s|image: .*|image: ${IMAGE_URI}|g" k8s/deployment.yaml
+                git config user.email "jenkins@example.com"
+                git config user.name "jenkins"
+                git add k8s/deployment.yaml
+                git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CI pipeline completed successfully"
+        }
+        failure {
+            echo "CI pipeline failed"
+        }
+    }
+}
