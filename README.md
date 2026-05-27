@@ -123,7 +123,6 @@ aws --version
 terraform version
 kubectl version --client
 git --version
-ssh -V
 ```
 
 Required tools:
@@ -132,7 +131,7 @@ Required tools:
 - Terraform
 - kubectl
 - Git
-- SSH client
+- SSH client (optional)
 - GitHub account
 - AWS account
 - Slack workspace
@@ -299,9 +298,11 @@ Install recommended plugins and then install these additional plugins if not alr
 
 ---
 
-## 9. Docker Permission for Jenkins User (it is added in jenkins.sh file but if still give issue then use this cmd )
+## 9. Docker Permission for Jenkins User
 
 Jenkins pipeline uses Docker to build images. The Linux `jenkins` user must have permission to access Docker.
+
+Note: This is already configured in `jenkins.sh` but use these commands if permission issues occur.
 
 SSH to Jenkins server:
 
