@@ -96,14 +96,12 @@ django-devops-project/
 ├── k8s/
 │   ├── namespace.yaml
 │   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ingress.yaml
+│   └── service.yaml
 │
 ├── argocd/
 │   └── application.yaml
 │
 ├── Jenkinsfile-CI
-├── Jenkinsfile-CD
 ├── .gitignore
 └── README.md
 ```
@@ -138,7 +136,187 @@ Required tools:
 
 ---
 
-## 5. AWS CLI Configuration
+---
+
+## 5. Tool Installation Guide for Ubuntu
+
+This section explains how to install the required DevOps tools on an Ubuntu local machine or Ubuntu-based EC2 instance before running this project.
+
+Required tools:
+
+- AWS CLI
+- Terraform
+- kubectl
+- Git
+- curl
+- unzip
+- wget
+
+### 5.1 Update Ubuntu Packages
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+Install common dependencies:
+
+```bash
+sudo apt install -y curl unzip wget gnupg software-properties-common apt-transport-https ca-certificates lsb-release git
+```
+
+### 5.2 Install AWS CLI on Ubuntu
+
+Install AWS CLI v2:
+
+```bash
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+```
+
+Verify AWS CLI installation:
+
+```bash
+aws --version
+```
+
+Expected output:
+
+```text
+aws-cli/2.x.x Python/3.x.x Linux/x86_64
+```
+
+If AWS CLI is already installed and you want to update it:
+
+```bash
+sudo ./aws/install --update
+```
+
+### 5.3 Install Terraform on Ubuntu
+
+Add the HashiCorp GPG key:
+
+```bash
+wget -O- https://apt.releases.hashicorp.com/gpg | \
+sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+```
+
+Add the HashiCorp repository:
+
+```bash
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+```
+
+Install Terraform:
+
+```bash
+sudo apt update
+sudo apt install -y terraform
+```
+
+Verify Terraform installation:
+
+```bash
+terraform version
+```
+
+Expected output:
+
+```text
+Terraform v1.x.x
+```
+
+### 5.4 Install kubectl on Ubuntu
+
+Install Kubernetes package dependencies:
+
+```bash
+sudo apt update
+sudo apt install -y apt-transport-https ca-certificates curl gnupg
+```
+
+Create the apt keyring directory:
+
+```bash
+sudo mkdir -p /etc/apt/keyrings
+```
+
+Download the Kubernetes signing key:
+
+```bash
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | \
+sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+```
+
+Add the Kubernetes apt repository:
+
+```bash
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
+https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | \
+sudo tee /etc/apt/sources.list.d/kubernetes.list
+```
+
+Install kubectl:
+
+```bash
+sudo apt update
+sudo apt install -y kubectl
+```
+
+Verify kubectl installation:
+
+```bash
+kubectl version --client
+```
+
+Expected output:
+
+```text
+Client Version: v1.30.x
+```
+
+### 5.5 Install Git on Ubuntu
+
+Install Git:
+
+```bash
+sudo apt install -y git
+```
+
+Verify Git installation:
+
+```bash
+git --version
+```
+
+Configure Git user details:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+```
+
+### 5.6 Final Tool Verification
+
+Run the following commands and make sure all tools return valid versions:
+
+```bash
+aws --version
+terraform version
+kubectl version --client
+git --version
+```
+
+After this, continue with AWS CLI configuration:
+
+```bash
+aws configure
+```
+
+## 6. AWS CLI Configuration
 
 Configure AWS CLI with your access key and secret key:
 
@@ -173,7 +351,7 @@ Expected output:
 
 ---
 
-## 6. Provision AWS Infrastructure Using Terraform
+## 7. Provision AWS Infrastructure Using Terraform
 
 Terraform provisions the following AWS resources:
 
@@ -236,7 +414,7 @@ eks_cluster_name = django-devops-eks
 
 ---
 
-## 7. Configure EKS Access
+## 8. Configure EKS Access
 
 After Terraform creates the EKS cluster, update your kubeconfig:
 
@@ -268,7 +446,7 @@ kubectl get pods -A
 
 ---
 
-## 8. Jenkins Setup
+## 9. Jenkins Setup
 
 Open Jenkins in the browser:
 
@@ -298,7 +476,7 @@ Install recommended plugins and then install these additional plugins if not alr
 
 ---
 
-## 9. Docker Permission for Jenkins User
+## 10. Docker Permission for Jenkins User
 
 Jenkins pipeline uses Docker to build images. The Linux `jenkins` user must have permission to access Docker.
 
@@ -332,7 +510,7 @@ sudo reboot
 
 ---
 
-## 10. SonarQube Setup
+## 11. SonarQube Setup
 
 Open SonarQube in browser:
 
@@ -356,7 +534,7 @@ My Account → Security → Generate Token
 ```
 
 
-## 11. Configure SonarQube in Jenkins
+## 12. Configure SonarQube in Jenkins
 
 Go to Jenkins:
 
@@ -388,7 +566,7 @@ Version: Latest available
 
 ---
 
-## 12. Jenkins Credentials Required
+## 13. Jenkins Credentials Required
 
 Go to:
 
@@ -424,7 +602,7 @@ Contents: Read and Write
 
 ---
 
-## 13. Create Jenkins Pipeline Job
+## 14. Create Jenkins Pipeline Job
 
 In Jenkins dashboard:
 
@@ -459,7 +637,7 @@ Save the job.
 
 ---
 
-## 14. Configure GitHub Webhook
+## 15. Configure GitHub Webhook
 
 Go to GitHub repository:
 
@@ -480,7 +658,7 @@ Click **Add webhook**.
 
 ---
 
-## 15. CI Pipeline Flow in Jenkins
+## 16. CI Pipeline Flow in Jenkins
 
 The `Jenkinsfile-CI` performs the following stages:
 
@@ -497,7 +675,7 @@ The `Jenkinsfile-CI` performs the following stages:
 
 ---
 
-## 16. Avoid Jenkins Infinite Trigger Loop
+## 17. Avoid Jenkins Infinite Trigger Loop
 
 Because Jenkins updates `k8s/deployment.yaml` and pushes back to GitHub, GitHub can trigger Jenkins again
 
@@ -513,7 +691,7 @@ This completely avoids the self-trigger loop.
 
 ---
 
-## 17. Amazon ECR Setup
+## 18. Amazon ECR Setup
 
 Terraform should create the ECR repository:
 
@@ -539,7 +717,7 @@ aws ecr describe-images \
 
 ---
 
-## 18. Kubernetes Manifests
+## 19. Kubernetes Manifests
 
 The `k8s/` directory contains Kubernetes deployment files.
 
@@ -591,7 +769,7 @@ TargetPort: 8000
 
 ---
 
-## 19. Install ArgoCD on EKS
+## 20. Install ArgoCD on EKS
 
 Create namespace:
 
@@ -653,7 +831,7 @@ Password: <OUTPUT_FROM_ABOVE_COMMAND>
 
 ---
 
-## 20. Configure ArgoCD Application from GUI
+## 21. Configure ArgoCD Application from GUI
 
 Open ArgoCD UI and create a new application.
 
@@ -697,7 +875,7 @@ Last Sync: Sync OK
 
 ---
 
-## 21. ArgoCD Application Manifest Option
+## 22. ArgoCD Application Manifest Option
 
 Instead of creating the app from GUI, you can apply the ArgoCD application manifest from the `argocd/` directory.
 
@@ -720,7 +898,7 @@ django-app   Synced        Healthy
 
 ---
 
-## 22. Deploy and Validate Application
+## 23. Deploy and Validate Application
 
 After Jenkins pushes image and updates the manifest, ArgoCD deploys the application.
 
@@ -761,7 +939,7 @@ http://a7c5976953aa94bd08419bc0421927e3-831692882.us-east-1.elb.amazonaws.com
 
 ---
 
-## 23. Verify Application Image Tag
+## 24. Verify Application Image Tag
 
 Check which image is currently deployed:
 
@@ -790,7 +968,7 @@ kubectl get pods -n django-app
 
 ---
 
-## 24. Slack Notification Setup
+## 25. Slack Notification Setup
 
 Create Slack incoming webhook:
 
@@ -815,7 +993,7 @@ The pipeline sends notifications for:
 
 ---
 
-## 25. End-to-End Test
+## 26. End-to-End Test
 
 Make a small application change inside the `app/` directory.
 
@@ -846,7 +1024,7 @@ Expected flow:
 
 ---
 
-## 26. Troubleshooting
+## 27. Troubleshooting
 
 ### Issue 1: Jenkins pipeline runs again and again
 
@@ -858,15 +1036,14 @@ Jenkins pushes deployment.yaml to GitHub, and GitHub webhook triggers Jenkins ag
 
 Fix:
 
-Use `[skip ci]` in Jenkins auto-commit and skip pipeline if latest commit contains `[skip ci]`.
-
-Recommended long-term fix:
+Use a production-grade GitOps design with separate repositories:
 
 ```text
-Use separate repositories:
-- Application repo
-- Kubernetes manifest repo
+Repo 1: Application source code and Jenkinsfile
+Repo 2: Kubernetes manifests watched by ArgoCD
 ```
+
+This avoids Jenkins triggering itself again when it updates Kubernetes manifests.
 
 ---
 
@@ -1005,7 +1182,7 @@ http://<LOADBALANCER_DNS>
 
 ---
 
-## 27. Useful Commands
+## 28. Useful Commands
 
 ### Jenkins logs
 
@@ -1054,7 +1231,7 @@ kubectl get deployment django-app -n django-app \
 
 ---
 
-## 28. Production Improvements
+## 29. Production Improvements
 
 For production usage, improve the solution with the following:
 
@@ -1075,7 +1252,7 @@ For production usage, improve the solution with the following:
 
 ---
 
-## 29. Final Validation Checklist
+## 30. Final Validation Checklist
 
 Before considering the setup complete, verify:
 
@@ -1094,11 +1271,11 @@ Before considering the setup complete, verify:
 - [ ] Django service has LoadBalancer URL
 - [ ] Application is accessible in browser
 - [ ] Slack notifications are received
-- [ ] Pipeline loop is controlled using `[skip ci]`
+- [ ] Pipeline loop is controlled by using separate application and manifest repositories
 
 ---
 
-## 30. Project Summary
+## 31. Project Summary
 
 This project implements a complete DevOps CI/CD pipeline for a Django application on AWS.
 
