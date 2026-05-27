@@ -31,7 +31,7 @@ done
 systemctl enable jenkins
 systemctl start jenkins
 
-# Allow Jenkins to run Docker commands, then reload services
+# Allow Jenkins to run Docker commands, then reload service
 usermod -aG docker jenkins
 systemctl restart docker
 systemctl restart jenkins
