@@ -26,9 +26,9 @@ pipeline {
                         ${scannerHome}/bin/sonar-scanner \
                           -Dsonar.projectKey=django-devops-app \
                           -Dsonar.projectName=django-devops-app \
+                          -Dsonar.sources=app \
                           -Dsonar.exclusions=app/venv/**,app/.venv/**,**/__pycache__/**,**/migrations/** \
-                          -Dsonar.python.version=3.12 \
-                          -Dsonar.sources=app
+                          -Dsonar.python.version=3.12
                         """
                     }
                 }
@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Trivy Security Scan') {
+        stage('Trivy Security Scan Report') {
             steps {
                 sh '''
                 mkdir -p trivy-reports
@@ -90,13 +90,24 @@ pipeline {
 
         stage('Update Kubernetes Manifest') {
             steps {
-                sh '''
-                sed -i "s|image: .*|image: ${IMAGE_URI}|g" k8s/deployment.yaml
-                git config user.email "jenkins@example.com"
-                git config user.name "jenkins"
-                git add k8s/deployment.yaml
-                git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GIT_USERNAME',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
+                    sh '''
+                    sed -i "s|image: .*|image: ${IMAGE_URI}|g" k8s/deployment.yaml
+
+                    git config user.email "jenkins@example.com"
+                    git config user.name "jenkins"
+
+                    git add k8s/deployment.yaml
+                    git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
+
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/anikethulule/django-devops-project.git
+                    git push origin main
+                    '''
+                }
             }
         }
     }
@@ -105,6 +116,7 @@ pipeline {
         success {
             echo "CI pipeline completed successfully"
         }
+
         failure {
             echo "CI pipeline failed"
         }
