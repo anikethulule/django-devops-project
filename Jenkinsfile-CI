@@ -115,6 +115,13 @@ pipeline {
     post {
         success {
             echo "CI pipeline completed successfully"
+             withCredentials([string(credentialsId: 'slack-webhook-url', variable: 'SLACK_WEBHOOK')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"Django app Integration testing and image deployment completed successfully on ECR"}' \
+                ${SLACK_WEBHOOK}
+                '''
+            }
         }
 
         failure {
