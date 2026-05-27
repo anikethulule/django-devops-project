@@ -31,6 +31,11 @@ done
 systemctl enable jenkins
 systemctl start jenkins
 
+# Allow Jenkins to run Docker commands, then reload services
+usermod -aG docker jenkins
+systemctl restart docker
+systemctl restart jenkins
+
 # Download and install kubectl
 echo "Installing kubectl..."
 cd /tmp
