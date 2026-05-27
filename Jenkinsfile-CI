@@ -95,7 +95,7 @@ pipeline {
                     sh '''
                     curl -X POST -H 'Content-type: application/json' \
                     --data "{
-                      \\"text\\": \\"🔐 Trivy Security Scan Completed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${ECR_REPO}:${IMAGE_TAG}\\nStatus: Security report generated. Pipeline continued.\\"
+                      \\"text\\": \\" Trivy Security Scan Completed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${ECR_REPO}:${IMAGE_TAG}\\nStatus: Security report generated. Pipeline continued.\\"
                     }" \
                     ${SLACK_WEBHOOK}
                     '''
@@ -135,7 +135,7 @@ pipeline {
                     sh '''
                     curl -X POST -H 'Content-type: application/json' \
                     --data "{
-                      \\"text\\": \\"📦 Docker Image Pushed to ECR\\nImage URI: ${IMAGE_URI}\\nLatest URI: ${LATEST_IMAGE_URI}\\"
+                      \\"text\\": \\" Docker Image Pushed to ECR\\nImage URI: ${IMAGE_URI}\\nLatest URI: ${LATEST_IMAGE_URI}\\"
                     }" \
                     ${SLACK_WEBHOOK}
                     '''
@@ -175,7 +175,7 @@ pipeline {
                     sh '''
                     curl -X POST -H 'Content-type: application/json' \
                     --data "{
-                      \\"text\\": \\"🚢 Kubernetes Manifest Updated\\nApplication: django-app\\nNew Image: ${IMAGE_URI}\\nStatus: Manifest pushed to GitHub. ArgoCD will sync to EKS.\\"
+                      \\"text\\": \\" Kubernetes Manifest Updated\\nApplication: django-app\\nNew Image: ${IMAGE_URI}\\nStatus: Manifest pushed to GitHub. ArgoCD will sync to EKS.\\"
                     }" \
                     ${SLACK_WEBHOOK}
                     '''
@@ -196,7 +196,7 @@ pipeline {
                         sh '''
                         curl -X POST -H 'Content-type: application/json' \
                         --data "{
-                          \\"text\\": \\"✅ Django CI/CD Pipeline Successful\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${IMAGE_URI}\\nStatus: Build, SonarQube, Trivy report, ECR push and ArgoCD manifest update completed.\\"
+                          \\"text\\": \\" Django CI/CD Pipeline Successful\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nImage: ${IMAGE_URI}\\nStatus: Build, SonarQube, Trivy report, ECR push and ArgoCD manifest update completed.\\"
                         }" \
                         ${SLACK_WEBHOOK}
                         '''
@@ -214,7 +214,7 @@ pipeline {
                         sh '''
                         curl -X POST -H 'Content-type: application/json' \
                         --data "{
-                          \\"text\\": \\"❌ Django CI/CD Pipeline Failed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nPlease check Jenkins console logs.\\"
+                          \\"text\\": \\" Django CI/CD Pipeline Failed\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\\nPlease check Jenkins console logs.\\"
                         }" \
                         ${SLACK_WEBHOOK}
                         '''
