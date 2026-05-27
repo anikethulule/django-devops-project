@@ -26,6 +26,8 @@ pipeline {
                         ${scannerHome}/bin/sonar-scanner \
                           -Dsonar.projectKey=django-devops-app \
                           -Dsonar.projectName=django-devops-app \
+                          -Dsonar.exclusions=app/venv/**,app/.venv/**,**/__pycache__/**,**/migrations/** \
+                          -Dsonar.python.version=3.12 \
                           -Dsonar.sources=app
                         """
                     }

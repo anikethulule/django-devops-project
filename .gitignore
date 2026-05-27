@@ -21,3 +21,13 @@ staticfiles/
 
 # OS
 .DS_Store
+
+app/venv/
+app/.venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+*.sqlite3
+db.sqlite3
