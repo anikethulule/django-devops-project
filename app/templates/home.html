@@ -75,6 +75,28 @@
       background: linear-gradient(180deg, #ffffffde, #f1f4f7f0);
     }
 
+    .env-strip {
+      margin: 0 32px;
+      border: 1px solid var(--line);
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      background: linear-gradient(90deg, #ffffff, #f8fbfd);
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #2a4356;
+      font-size: 0.9rem;
+    }
+
+    .chip {
+      border: 1px solid #dbe7f0;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #ffffff;
+      font-weight: 500;
+    }
+
     .hero h1 {
       margin: 0 0 14px;
       font-family: "Syne", sans-serif;
@@ -127,6 +149,11 @@
 
     .btn:hover {
       transform: translateY(-2px);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid #95d5ff;
+      outline-offset: 2px;
     }
 
     .status {
@@ -235,6 +262,13 @@
         </div>
       </aside>
     </section>
+
+    <div class="env-strip">
+      <span class="chip">Env: Production</span>
+      <span class="chip">Region: us-east-1</span>
+      <span class="chip">Deploy: ArgoCD</span>
+      <span class="chip">Runtime: Django + Gunicorn</span>
+    </div>
   </main>
 </body>
 </html>
